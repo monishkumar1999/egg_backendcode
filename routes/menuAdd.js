@@ -9,6 +9,8 @@ menuRouter.use("/insertMainMenu", (req, res) => {
   res.send("Main menu created");
 });
 
+
+
 menuRouter.post("/addSubmenu", async (req, res) => {
   try {
     const { title, insertsubmenus } = req.body;
