@@ -9,18 +9,16 @@ menuRouter.use("/insertMainMenu", (req, res) => {
   res.send("Main menu created");
 });
 
-
-
 menuRouter.post("/addSubmenu", async (req, res) => {
   try {
     const { title, insertsubmenus } = req.body;
-
     if (insertsubmenus.length < 1) {
       res.status(400).send("No thissub menu");
     }
 
     const menu = await Menu.findOne({ title: title });
-    if (menu.length < 1) {
+  
+    if (!menu) {
       res.status(400).send("No this menu");
     }
 
@@ -53,28 +51,68 @@ menuRouter.post("/delete/MainMenu", async (req, res) => {
 });
 
 menuRouter.post("/update/MainMenu", async (req, res) => {
-  try{
-    const { mainMenuName ,updateName} = req.body;
-  const menu = await Menu.findOne({ title: mainMenuName });
+  try {
+    const { mainMenuName, updateName } = req.body;
+    const menu = await Menu.findOne({ title: mainMenuName });
 
-  if (!menu) {
-    res.status(404).json({ status: true, message: "No data" });
-    return
+    if (!menu) {
+      res.status(404).json({ status: true, message: "No data" });
+      return;
+    }
+
+    menu.title = updateName;
+    await menu.save();
+    res.json({
+      status: "true",
+      message: "update successfully",
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: "false",
+      message: err.message,
+    });
   }
+});
 
-   menu.title= updateName
-  await menu.save()
-  res.json({
-    "status":"true",
-    "message":"update successfully"
-  });
+menuRouter.put("/delete/subMenu", async (req, res) => {
+
+  try{
+    const { title, subMenu } = req.body;
+
+    const menu = await Menu.findOne({
+      $and: [
+        { title: title },
+        { submenu: true },
+        { "submenuItems.title": subMenu },
+      ],
+    });
+  
+    if (!menu) {
+      res.json({
+        status: "false",
+        message: "This " + title + " dont have a submenu",
+      });
+      return;
+    }
+    const result = await Menu.updateOne(
+      { title: title, submenu: true },
+      {
+        $pull: {
+          submenuItems: { title: subMenu },
+        },
+      }
+    );
+  
+    if (result.matchedCount) {
+      res.json({ status: "true", message: "Deleted successfully" });
+    }
   }
   catch(err){
-  res.status(400).json({
-    "status":"false",
-    "message":err.message
-  })
+    res.jason({
+      "status":"false"
+    })
   }
+ 
 });
 
 module.exports = {
